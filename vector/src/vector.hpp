@@ -324,6 +324,12 @@ class vector {
         return m_size;
     }
     /**
+     * returns the number of elements that can be held in currently allocated storage.
+     */
+    size_t capacity() const {
+        return m_cap;
+    }
+    /**
      * clears the contents
      */
     void clear() {
@@ -352,10 +358,18 @@ class vector {
     iterator insert(const size_t &ind, const T &value) {
 		if (ind > m_size) throw index_out_of_bound();
 		_grow_capacity_until(m_size + 1);
-		for (int i = m_size; i > ind; --i) {
-            std::construct_at(m_data + i, std::move(m_data[i - 1]));
+		for (size_t i = m_size; i > ind; --i) {
+            if (i == m_size) {
+                std::construct_at(m_data + i, std::move_if_noexcept(m_data[i - 1]));
+            } else {
+                m_data[i] = std::move_if_noexcept(m_data[i - 1]);
+            } 
 		}
-        std::construct_at(m_data + ind, value);
+        if (ind == m_size) {
+            std::construct_at(m_data + ind, value);
+        } else {
+            m_data[ind] = value;
+        }
 		++m_size;
 		return iterator(m_data + ind, this);
 	}
@@ -374,11 +388,11 @@ class vector {
      */
     iterator erase(const size_t &ind) {
 		if (ind >= m_size) throw index_out_of_bound();
-        std::destroy_at(m_data + ind);
-		for (int i = ind; i < m_size - 1; ++i) {
-            std::construct_at(m_data + i, std::move(m_data[i + 1]));
-		}
 		--m_size;
+		for (size_t i = ind; i < m_size; ++i) {
+            m_data[i] = std::move_if_noexcept(m_data[i + 1]);
+		}
+        std::destroy_at(m_data + m_size);
 		_shrink_capacity();
 		return iterator(m_data + ind, this);
 	}
@@ -409,10 +423,11 @@ class vector {
 		m_data = alloc.allocate(n);
 		if (old_data) {
 			for (size_t i = 0; i < m_size; ++i) {
-				// std::construct_at(m_data + i, std::as_const(old_data[i]));
-                std::construct_at(m_data + i, std::move(old_data[i]));
-                // std::destroy_at(old_data + i);
+                std::construct_at(m_data + i, std::move_if_noexcept(old_data[i]));
 			}
+            for (size_t i = 0; i < m_size; ++i) {
+                std::destroy_at(old_data + i);
+            }
 			alloc.deallocate(old_data, m_cap);
 		}
 		m_cap = n;
@@ -424,10 +439,11 @@ class vector {
 		m_data = alloc.allocate(n);
 		if (old_data) {
 			for (size_t i = 0; i < m_size; ++i) {
-				// std::construct_at(m_data + i, std::as_const(old_data[i]));
-                std::construct_at(m_data + i, std::move(old_data[i]));
-                // std::destroy_at(old_data + i);
+                std::construct_at(m_data + i, std::move_if_noexcept(old_data[i]));
 			}
+            for (size_t i = 0; i < m_size; ++i) {
+                std::destroy_at(old_data + i);
+            }
 			alloc.deallocate(old_data, m_cap);
 		}
 		m_cap = n;
