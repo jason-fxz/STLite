@@ -5,9 +5,7 @@
 
 #include <climits>
 #include <cstddef>
-#include <deque>
 #include <memory>
-#include <utility>
 
 namespace sjtu {
 /**
@@ -16,17 +14,17 @@ namespace sjtu {
  */
 template<typename T>
 T max(const T &x, const T &y) {
-	return x > y ? x : y;
+    return x > y ? x : y;
 }
 
 template<typename T>
 class vector {
   private:
-    static constexpr double alpha = 2;
-    T *m_data;
-    size_t m_size;
-    size_t m_cap;
-    std::allocator<T> alloc;
+    static constexpr double MULTIPLIER = 2;
+    T *_m_data;
+    size_t _m_size;
+    size_t _m_cap;
+    std::allocator<T> _alloc;
 
   public:
     /**
@@ -59,9 +57,9 @@ class vector {
         friend class vector;
 
       private:
-        T *m_ptr;
+        T *_m_ptr;
         const vector *const _vec;
-        iterator(T *_ptr, const vector *__vec) : m_ptr(_ptr), _vec(__vec) {}
+        iterator(T *_ptr, const vector *__vec) : _m_ptr(_ptr), _vec(__vec) {}
 
       public:
         /**
@@ -69,68 +67,68 @@ class vector {
          * as well as operator-
          */
         iterator operator+(const int &n) const {
-            return iterator(m_ptr + n, _vec);
+            return iterator(_m_ptr + n, _vec);
         }
         iterator operator-(const int &n) const {
-            return iterator(m_ptr - n, _vec);
+            return iterator(_m_ptr - n, _vec);
         }
         // return the distance between two iterators,
         // if these two iterators point to different vectors, throw invaild_iterator.
         int operator-(const iterator &rhs) const {
             if (_vec != rhs._vec) throw invalid_iterator();
-            return m_ptr - rhs.m_ptr;
+            return _m_ptr - rhs._m_ptr;
         }
         iterator &operator+=(const int &n) {
-            m_ptr += n;
+            _m_ptr += n;
             return *this;
         }
         iterator &operator-=(const int &n) {
-            m_ptr -= n;
+            _m_ptr -= n;
             return *this;
         }
 
         iterator operator++(int) {
             auto tmp = *this;
-            ++m_ptr;
+            ++_m_ptr;
             return tmp;
         }
 
         iterator &operator++() {
-            ++m_ptr;
+            ++_m_ptr;
             return *this;
         }
 
         iterator operator--(int) {
             auto tmp = *this;
-            --m_ptr;
+            --_m_ptr;
             return tmp;
         }
 
         iterator &operator--() {
-            --m_ptr;
+            --_m_ptr;
             return *this;
         }
 
         T &operator*() const {
-            return *m_ptr;
+            return *_m_ptr;
         }
         /**
          * a operator to check whether two iterators are same (pointing to the same memory address).
          */
         bool operator==(const iterator &rhs) const {
-            return m_ptr == rhs.m_ptr;
+            return _m_ptr == rhs._m_ptr;
         }
         bool operator==(const const_iterator &rhs) const {
-            return m_ptr == rhs.m_ptr;
+            return _m_ptr == rhs._m_cptr;
         }
         /**
          * some other operator for iterator.
          */
         bool operator!=(const iterator &rhs) const {
-            return m_ptr != rhs.m_ptr;
+            return _m_ptr != rhs._m_ptr;
         }
         bool operator!=(const const_iterator &rhs) const {
-            return m_ptr != rhs.m_ptr;
+            return _m_ptr != rhs._m_cptr;
         }
     };
     /**
@@ -147,76 +145,76 @@ class vector {
 
       private:
         /*TODO*/
-        const T *m_ptr;
+        const T *_m_cptr;
         const vector *const _vec;
-        const_iterator(const T *_ptr, const vector *__vec) : m_ptr(_ptr), _vec(__vec) {}
-        const_iterator(const iterator &other) : m_ptr(other.m_ptr), _vec(other._vec) {}
+        const_iterator(const T *_ptr, const vector *__vec) : _m_cptr(_ptr), _vec(__vec) {}
+        const_iterator(const iterator &other) : _m_cptr(other._m_ptr), _vec(other._vec) {}
         friend class vector;
 
       public:
         const_iterator operator+(const int &n) const {
-            return const_iterator(m_ptr + n, _vec);
+            return const_iterator(_m_cptr + n, _vec);
         }
         const_iterator operator-(const int &n) const {
-            return const_iterator(m_ptr - n, _vec);
+            return const_iterator(_m_cptr - n, _vec);
         }
         // return the distance between two iterators,
         // if these two iterators point to different vectors, throw invaild_iterator.
         int operator-(const const_iterator &rhs) const {
             if (_vec != rhs._vec) throw invalid_iterator();
-            return m_ptr - rhs.m_ptr;
+            return _m_cptr - rhs._m_cptr;
         }
         const_iterator &operator+=(const int &n) {
-            m_ptr += n;
+            _m_cptr += n;
             return *this;
         }
         const_iterator &operator-=(const int &n) {
-            m_ptr -= n;
+            _m_cptr -= n;
             return *this;
         }
 
         const_iterator operator++(int) {
             auto tmp = *this;
-            ++m_ptr;
+            ++_m_cptr;
             return tmp;
         }
 
         const_iterator &operator++() {
-            ++m_ptr;
+            ++_m_cptr;
             return *this;
         }
 
         const_iterator operator--(int) {
             auto tmp = *this;
-            --m_ptr;
+            --_m_cptr;
             return tmp;
         }
 
         const_iterator &operator--() {
-            --m_ptr;
+            --_m_cptr;
             return *this;
         }
 
         const T &operator*() const {
-            return *m_ptr;
+            return *_m_cptr;
         }
         /**
          * a operator to check whether two iterators are same (pointing to the same memory address).
          */
         bool operator==(const iterator &rhs) const {
-            return m_ptr == rhs.m_ptr;
+            return _m_cptr == rhs._m_ptr;
         }
         bool operator==(const const_iterator &rhs) const {
-            return m_ptr == rhs.m_ptr;
+            return _m_cptr == rhs._m_cptr;
         }
         /**
          * some other operator for iterator.
          */
         bool operator!=(const iterator &rhs) const {
-            return m_ptr != rhs.m_ptr;
+            return _m_cptr != rhs._m_ptr;
         }
         bool operator!=(const const_iterator &rhs) const {
-            return m_ptr != rhs.m_ptr;
+            return _m_cptr != rhs._m_cptr;
         }
 
     };
@@ -224,13 +222,13 @@ class vector {
      * TODO Constructs
      * At least two: default constructor, copy constructor
      */
-    vector() : m_data(nullptr), m_cap(0), m_size(0) {}
+    vector() : _m_data(nullptr), _m_cap(0), _m_size(0) {}
     vector(const vector &other) {
-        m_data = alloc.allocate(other.m_cap);
-        m_size = other.m_size;
-        m_cap = other.m_cap;
-        for (int i = 0; i < m_size; ++i) {
-            std::construct_at(m_data + i, std::as_const(other.m_data[i]));
+        _m_data = _alloc.allocate(other._m_cap);
+        _m_size = other._m_size;
+        _m_cap = other._m_cap;
+        for (int i = 0; i < _m_size; ++i) {
+            std::construct_at(_m_data + i, std::as_const(other._m_data[i]));
         }
     }
     /**
@@ -245,11 +243,11 @@ class vector {
     vector &operator=(const vector &other) {
         if (this == &other) return *this;
         clear();
-        m_data = alloc.allocate(other.m_cap);
-        m_size = other.m_size;
-        m_cap = other.m_cap;
-        for (int i = 0; i < m_size; ++i) {
-            std::construct_at(m_data + i, std::as_const(other.m_data[i]));
+        _m_data = _alloc.allocate(other._m_cap);
+        _m_size = other._m_size;
+        _m_cap = other._m_cap;
+        for (int i = 0; i < _m_size; ++i) {
+            std::construct_at(_m_data + i, std::as_const(other._m_data[i]));
         }
         return *this;
     }
@@ -258,12 +256,12 @@ class vector {
      * throw index_out_of_bound if pos is not in [0, size)
      */
     T &at(const size_t &pos) {
-        if (pos < 0 || pos >= m_size) throw index_out_of_bound();
-        return m_data[pos];
+        if (pos < 0 || pos >= _m_size) throw index_out_of_bound();
+        return _m_data[pos];
     }
     const T &at(const size_t &pos) const {
-        if (pos < 0 || pos >= m_size) throw index_out_of_bound();
-        return m_data[pos];
+        if (pos < 0 || pos >= _m_size) throw index_out_of_bound();
+        return _m_data[pos];
     }
     /**
      * assigns specified element with bounds checking
@@ -282,73 +280,73 @@ class vector {
      * throw container_is_empty if size == 0
      */
     const T &front() const {
-        if (m_size == 0) throw container_is_empty();
-        return m_data[0];
+        if (_m_size == 0) throw container_is_empty();
+        return _m_data[0];
     }
     /**
      * access the last element.
      * throw container_is_empty if size == 0
      */
     const T &back() const {
-        if (m_size == 0) throw container_is_empty();
-        return m_data[m_size - 1];
+        if (_m_size == 0) throw container_is_empty();
+        return _m_data[_m_size - 1];
     }
     /**
      * returns an iterator to the beginning.
      */
     iterator begin() {
-        return iterator(m_data, this);
+        return iterator(_m_data, this);
     }
     const_iterator cbegin() const {
-        return const_iterator(m_data, this);
+        return const_iterator(_m_data, this);
     }
     /**
      * returns an iterator to the end.
      */
     iterator end() {
-        return iterator(m_data + m_size, this);
+        return iterator(_m_data + _m_size, this);
     }
     const_iterator cend() const {
-        return const_iterator(m_data + m_size, this);
+        return const_iterator(_m_data + _m_size, this);
     }
     /**
      * checks whether the container is empty
      */
     bool empty() const {
-        return m_size == 0;
+        return _m_size == 0;
     }
     /**
      * returns the number of elements
      */
     size_t size() const {
-        return m_size;
+        return _m_size;
     }
     /**
      * returns the number of elements that can be held in currently allocated storage.
      */
     size_t capacity() const {
-        return m_cap;
+        return _m_cap;
     }
     /**
      * clears the contents
      */
     void clear() {
-        if (m_data == nullptr) return;
-        for (int i = 0; i < m_size; ++i) {
-            std::destroy_at(m_data + i);
+        if (_m_data == nullptr) return;
+        for (int i = 0; i < _m_size; ++i) {
+            std::destroy_at(_m_data + i);
         }
-        alloc.deallocate(m_data, m_cap);
-        m_data = nullptr;
-        m_size = 0;
-        m_cap = 0;
+        _alloc.deallocate(_m_data, _m_cap);
+        _m_data = nullptr;
+        _m_size = 0;
+        _m_cap = 0;
     }
     /**
      * inserts value before pos
      * returns an iterator pointing to the inserted value.
      */
     iterator insert(iterator pos, const T &value) {
-		return insert(pos - begin(), value);
-	}
+        return insert(pos - begin(), value);
+    }
     /**
      * inserts value at index ind.
      * after inserting, this->at(ind) == value
@@ -356,98 +354,98 @@ class vector {
      * throw index_out_of_bound if ind > size (in this situation ind can be size because after inserting the size will increase 1.)
      */
     iterator insert(const size_t &ind, const T &value) {
-		if (ind > m_size) throw index_out_of_bound();
-		_grow_capacity_until(m_size + 1);
-		for (size_t i = m_size; i > ind; --i) {
-            if (i == m_size) {
-                std::construct_at(m_data + i, std::move_if_noexcept(m_data[i - 1]));
+        if (ind > _m_size) throw index_out_of_bound();
+        _grow_capacity_until(_m_size + 1);
+        for (size_t i = _m_size; i > ind; --i) {
+            if (i == _m_size) {
+                std::construct_at(_m_data + i, std::move_if_noexcept(_m_data[i - 1]));
             } else {
-                m_data[i] = std::move_if_noexcept(m_data[i - 1]);
-            } 
-		}
-        if (ind == m_size) {
-            std::construct_at(m_data + ind, value);
-        } else {
-            m_data[ind] = value;
+                _m_data[i] = std::move_if_noexcept(_m_data[i - 1]);
+            }
         }
-		++m_size;
-		return iterator(m_data + ind, this);
-	}
+        if (ind == _m_size) {
+            std::construct_at(_m_data + ind, value);
+        } else {
+            _m_data[ind] = value;
+        }
+        ++_m_size;
+        return iterator(_m_data + ind, this);
+    }
     /**
      * removes the element at pos.
      * return an iterator pointing to the following element.
      * If the iterator pos refers the last element, the end() iterator is returned.
      */
     iterator erase(iterator pos) {
-		return erase(pos - begin());
-	}
+        return erase(pos - begin());
+    }
     /**
      * removes the element with index ind.
      * return an iterator pointing to the following element.
      * throw index_out_of_bound if ind >= size
      */
     iterator erase(const size_t &ind) {
-		if (ind >= m_size) throw index_out_of_bound();
-		--m_size;
-		for (size_t i = ind; i < m_size; ++i) {
-            m_data[i] = std::move_if_noexcept(m_data[i + 1]);
-		}
-        std::destroy_at(m_data + m_size);
-		_shrink_capacity();
-		return iterator(m_data + ind, this);
-	}
+        if (ind >= _m_size) throw index_out_of_bound();
+        --_m_size;
+        for (size_t i = ind; i < _m_size; ++i) {
+            _m_data[i] = std::move_if_noexcept(_m_data[i + 1]);
+        }
+        std::destroy_at(_m_data + _m_size);
+        _shrink_capacity();
+        return iterator(_m_data + ind, this);
+    }
     /**
      * adds an element to the end.
      */
     void push_back(const T &value) {
-		_grow_capacity_until(m_size + 1);
-		std::construct_at(m_data + m_size, value);
-		++m_size;
-	}
+        _grow_capacity_until(_m_size + 1);
+        std::construct_at(_m_data + _m_size, value);
+        ++_m_size;
+    }
     /**
      * remove the last element from the end.
      * throw container_is_empty if size() == 0
      */
     void pop_back() {
-		if (m_size == 0) throw container_is_empty();
-		std::destroy_at(m_data + m_size - 1);
-		--m_size;
-		_shrink_capacity();
-	}
+        if (_m_size == 0) throw container_is_empty();
+        std::destroy_at(_m_data + _m_size - 1);
+        --_m_size;
+        _shrink_capacity();
+    }
 
   private:
     void _grow_capacity_until(size_t n) {
-		if (n <= m_cap) return;
-		n = max(n, size_t(m_cap * alpha));
-		auto old_data = m_data;
-		m_data = alloc.allocate(n);
-		if (old_data) {
-			for (size_t i = 0; i < m_size; ++i) {
-                std::construct_at(m_data + i, std::move_if_noexcept(old_data[i]));
-			}
-            for (size_t i = 0; i < m_size; ++i) {
+        if (n <= _m_cap) return;
+        n = max(n, size_t(_m_cap * MULTIPLIER));
+        auto old_data = _m_data;
+        _m_data = _alloc.allocate(n);
+        if (old_data) {
+            for (size_t i = 0; i < _m_size; ++i) {
+                std::construct_at(_m_data + i, std::move_if_noexcept(old_data[i]));
+            }
+            for (size_t i = 0; i < _m_size; ++i) {
                 std::destroy_at(old_data + i);
             }
-			alloc.deallocate(old_data, m_cap);
-		}
-		m_cap = n;
-	}
-	void _shrink_capacity() {
-		if (m_size * alpha >= m_cap) return ;
-		int n = m_cap / alpha;
-		auto old_data = m_data;
-		m_data = alloc.allocate(n);
-		if (old_data) {
-			for (size_t i = 0; i < m_size; ++i) {
-                std::construct_at(m_data + i, std::move_if_noexcept(old_data[i]));
-			}
-            for (size_t i = 0; i < m_size; ++i) {
+            _alloc.deallocate(old_data, _m_cap);
+        }
+        _m_cap = n;
+    }
+    void _shrink_capacity() {
+        if (_m_size * MULTIPLIER >= _m_cap) return ;
+        int n = _m_cap / MULTIPLIER;
+        auto old_data = _m_data;
+        _m_data = _alloc.allocate(n);
+        if (old_data) {
+            for (size_t i = 0; i < _m_size; ++i) {
+                std::construct_at(_m_data + i, std::move_if_noexcept(old_data[i]));
+            }
+            for (size_t i = 0; i < _m_size; ++i) {
                 std::destroy_at(old_data + i);
             }
-			alloc.deallocate(old_data, m_cap);
-		}
-		m_cap = n;
-	}
+            _alloc.deallocate(old_data, _m_cap);
+        }
+        _m_cap = n;
+    }
 
 };
 
