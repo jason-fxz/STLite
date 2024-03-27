@@ -1,0 +1,568 @@
+/**
+ * implement a container like std::map
+ */
+#ifndef SJTU_MAP_HPP
+#define SJTU_MAP_HPP
+
+// only for std::less<T>
+#include <functional>
+#include <cstddef>
+#include "utility.hpp"
+#include "exceptions.hpp"
+
+#include <iostream>
+#include <cassert>
+
+namespace sjtu {
+
+template<typename Tp>
+void swap(Tp &a, Tp &b) {
+    Tp tmp = a;
+    a = b;
+    b = tmp;
+}
+
+template <class Key, class Val, class Compare = std::less<Key>> class RBTree {
+  public:
+    typedef pair<const Key, Val> data_type;
+    typedef Key                  key_type;
+    typedef Val                  value_type;
+
+  private:
+    enum ColorT { RED, BLACK };
+    struct Node {
+        typedef Node *NodePtr;
+        NodePtr   left;
+        NodePtr   right;
+        NodePtr   parent;
+        ColorT    color;
+        data_type data;
+
+        Node(const data_type &_data, ColorT _color)
+            : data(_data), left(nullptr), right(nullptr), parent(nullptr), color(_color) {}
+    };
+    typedef Node *NodePtr;
+
+    NodePtr root;
+
+  public:
+    RBTree() : root(nullptr) {}
+    ~RBTree() { clear(root); }
+
+    pair<NodePtr, bool> insert(const data_type &data) {
+        NodePtr t, p, gp;
+        if (root == nullptr) {
+            root = new Node(data, BLACK);
+            return pair<NodePtr, bool>(root, true);
+        }
+        p = gp = t = root;
+        while (true) {
+            if (t) {
+                if (t->left && t->left->color == RED && t->right && t->right->color == RED) {
+                    t->left->color = t->right->color = BLACK;
+                    t->color = RED;
+                    insertAdjust(gp, p, t);
+                }
+                gp = p;
+                p = t;
+                if (Compare()(data.first, t->data.first)) t = t->left;
+                else if (Compare()(t->data.first, data.first)) t = t->right;
+                else return pair<NodePtr, bool>(t, false);
+            } else {
+                t = new Node(data, RED);
+                if (Compare()(data.first, p->data.first)) p->left = t;
+                else p->right = t;
+                t->parent = p;
+                insertAdjust(gp, p, t);
+                root->color = BLACK;
+                return pair<NodePtr, bool>(t, true);
+            }
+        }
+    }
+
+    void remove(const key_type &key) {
+        NodePtr c, p, t; // c: current node, p: parent node, t: brother node
+        key_type del = key;
+        if (root == nullptr) return;
+        if (root->data.first == key && root->left == nullptr
+            && root->right == nullptr) {
+            delete root;
+            root = nullptr;
+            return;
+        }
+        p = c = t = root;
+        while (true) {
+            removeAdjust(p, c, t, del);
+            if (c->data.first == del && c->left && c->right) {
+                NodePtr tmp = c->right;
+                while (tmp->left) tmp = tmp->left;
+                // c->data = tmp->data;
+                // del = tmp->data.first;
+                // swap(tmp, c)
+                tmp->left = c->left;
+                c->left = nullptr;
+                if (tmp->left) tmp->left->parent = tmp;
+                if (c->parent) {
+                    if (c->parent->left == c) c->parent->left = tmp;
+                    else c->parent->right = tmp;
+                } else {
+                    root = tmp;
+                }
+                NodePtr pc = c->parent;
+                if (tmp->parent != c) {
+                    tmp->parent->left = c;
+                    c->parent = tmp->parent;
+                    swap(c->right, tmp->right);
+                    if (c->right) c->right->parent = c;
+                    if (tmp->right) tmp->right->parent = tmp;
+                } else {
+                    c->right = tmp->right;
+                    if (c->right) c->right->parent = c;
+                    c->parent = tmp;
+                    tmp->right = c;
+                }
+                tmp->parent = pc;
+                p = tmp;
+                c = p->right;
+                t = p->left;
+                continue;
+            }
+            if (c->data.first == del) {
+                assert(c->left == nullptr && c->right == nullptr);
+                assert(c->parent == p);
+                delete c;
+                if (p->left == c) p->left = nullptr;
+                else p->right = nullptr;
+                root->color = BLACK;
+                return;
+            }
+            p = c;
+            c = (Compare()(del, c->data.first)) ? c->left : c->right;
+            t = (c == p->left) ? p->right : p->left;
+        }
+    }
+
+    data_type *find(const key_type &key) {
+        NodePtr t = root;
+        while (t && t->data.first != key) {
+            if (Compare()(key, t->data.first)) t = t->left;
+            else t = t->right;
+        }
+        if (t == nullptr) return nullptr;
+        return &(t->data);
+    }
+    void debug(NodePtr x) { 
+        if (x == nullptr) return;
+        if (x->left) {
+            if (x->left->parent != x) {
+                std::cerr << "ERROR: " << x->data.first << " " << x->left->data.first << " " <<
+                          x->left->parent->data.first << std::endl;
+                throw;
+            }
+            debug(x->left);
+        }
+        std::cout << "DEBUG: (" << x->data.first << ", " << x->data.second << ") " <<
+                  (x->color ? "BLACK" : "RED") << " :";
+        if (x->left) {
+            if (x->color == RED) {
+                if (x->left->color == RED) {
+                    std::cerr << "ERROR: red red" << x->data.first << " " << x->left->data.first << std::endl;
+                    throw;
+                }
+            }
+            std::cout << "l: " <<  x->left->data.first << " ";
+        }
+        if (x->right) {
+            if (x->color == RED) {
+                if (x->right->color == RED) {
+                    std::cerr << "ERROR: red red" << x->data.first << " " << x->right->data.first << std::endl;
+                    throw;
+                }
+            }
+            std::cout << "r: " << x->right->data.first << " ";
+        }
+        std::cout << std::endl;
+        if (x->right) {
+            if (x->right->parent != x) {
+                std::cerr << "ERROR: child parent?" << x->data.first << " " <<
+                          x->right->data.first << " " << x->right->parent->data.first << std::endl;
+                throw;
+            }
+            debug(x->right);
+        }
+    }
+    void print() {
+        std::cerr << "======= Print =======" << std::endl;
+        std::cerr << "Root = " << root->data.first << std::endl;
+        if (root->parent != nullptr) {
+            std::cerr << "ERROR: root has parent!" << root->data.first << " " <<
+                      root->parent->data.first << std::endl;
+            throw;
+        }
+        if (root->color != BLACK) {
+            std::cerr << "ERROR: root is not black!" << root->data.first << std::endl;
+            throw;
+        }
+        debug(root);
+        std::cerr << "===== End Print =====" << std::endl;
+    }
+
+  private:
+
+    void clear(NodePtr x) {
+        if (x == nullptr) return;
+        clear(x->left);
+        clear(x->right);
+        delete x;
+        x = nullptr;
+    }
+
+    void LL(NodePtr gp) {
+        NodePtr p = gp->left;
+        gp->left = p->right;
+        if (p->right) p->right->parent = gp;
+        p->right = gp;
+        p->parent = gp->parent;
+        if (gp->parent) {
+            if (gp->parent->left == gp) gp->parent->left = p;
+            else gp->parent->right = p;
+        } else {
+            root = p;
+        }
+        gp->parent = p;
+        p->color = BLACK;
+        gp->color = RED;
+    }
+
+    void RR(NodePtr gp) {
+        NodePtr p = gp->right;
+        gp->right = p->left;
+        if (p->left) p->left->parent = gp;
+        p->left = gp;
+        p->parent = gp->parent;
+        if (gp->parent) {
+            if (gp->parent->left == gp) gp->parent->left = p;
+            else gp->parent->right = p;
+        } else {
+            root = p;
+        }
+        gp->parent = p;
+        p->color = BLACK;
+        gp->color = RED;
+    }
+
+    void LR(NodePtr gp) {
+        // Node *p = gp->left, *x = p->right;
+        RR(gp->left);
+        LL(gp);
+
+        
+        // Node *p = gp->left, *x = p->right;
+        // p->right = x->left;
+        // if (x->left) x->left->parent = p;
+        // x->left = p;
+        // p->parent = x;
+        // gp->left = x->right;
+        // if (x->right) x->right->parent = gp;
+        // x->right = gp;
+        // x->parent = gp->parent;
+        // if (gp->parent) {
+        //     if (gp->parent->left == gp) gp->parent->left = x;
+        //     else gp->parent->right = x;
+        // } else {
+        //     root = p;
+        // }
+        // gp->parent = x;
+    }
+
+    void RL(NodePtr gp) {
+        LL(gp->right);
+        RR(gp);
+        // NodePtr p = gp->right, x = p->left;
+        // p->left = x->right;
+        // if (x->right) x->right->parent = p;
+        // x->right = p;
+        // p->parent = x;
+        // gp->right = x->left;
+        // if (x->left) x->left->parent = gp;
+        // x->left = gp;
+        // x->parent = gp->parent;
+        // if (gp->parent) {
+        //     if (gp->parent->left == gp) gp->parent->left = x;
+        //     else gp->parent->right = x;
+        // } else {
+        //     root = p;
+        // }
+        // gp->parent = x;
+    }
+
+
+
+    void insertAdjust(NodePtr gp, NodePtr p, NodePtr t) {
+        if (p->color == BLACK) return;
+        if (p == root) {
+            p->color = BLACK;
+            return;
+        }
+        assert(p->parent == gp);
+        assert(t->parent == p);
+        if (gp->left == p) {
+            if (p->left == t) LL(gp);
+            else LR(gp);
+        } else {
+            if (p->right == t) RR(gp);
+            else RL(gp);
+        }
+    }
+
+    void removeAdjust(NodePtr &p, NodePtr &c, NodePtr &t, key_type del) {
+        if (c->color == RED) return;
+        if (c == root) {
+            if (c->left && c->right && c->left->color == c->right->color) {
+                c->color = RED;
+                c->left->color = c->right->color = BLACK;
+                return ;
+            }
+        }
+        if ((c->left && c->left->color == BLACK || c->left == nullptr) && (c->right
+                && c->right->color == BLACK || c->right == nullptr)) {
+            if ((t->left && t->left->color == BLACK || t->left == nullptr) && (t->right
+                    && t->right->color == BLACK || t->right == nullptr)) {
+                p->color = BLACK;
+                c->color = t->color = RED;
+            } else {
+                if (p->left == t) {
+                    if (t->left && t->left->color == RED) {
+                        t->left->color = BLACK;
+                        LL(p);
+                        p = t;
+                    } else {
+                        LR(p);
+                        p = p->right;
+                        p->color = BLACK;
+                    }
+                } else {
+                    if (t->right && t->right->color == RED) {
+                        t->right->color = BLACK;
+                        RR(p);
+                        p = t;
+                    } else {
+                        RL(p);
+                        p = p->left;
+                        p->color = BLACK;
+                    }
+                }
+                c->color = RED;
+            }
+        } else {
+            if (c->data.first == del) {
+                if (c->left && c->right) {
+                    if (c->right->color == BLACK) {
+                        LL(c);
+                        c = c->right;
+                    }
+                    return ;
+                }
+                if (c->left) {
+                    LL(c);
+                    p = c;
+                    c = c->right;
+                } else {
+                    RR(c);
+                    p = c;
+                    c = c->left;
+                }
+            } else {
+                p = c;
+                c = (Compare()(del, p->data.first)) ? p->left : p->right;
+                t = (c == p->left) ? p->right : p->left;
+                if (c->color == BLACK) {
+                    if (t == p->right) RR(p);
+                    else LL(p);
+                    p = t;
+                    t = (c == p->left) ? p->right : p->left;
+                    removeAdjust(p, c, t, del);
+                }
+            }
+        }
+    }
+};
+
+
+
+template <
+    class Key,
+    class T,
+    class Compare = std::less<Key>
+    > class map {
+  public:
+    /**
+     * the internal type of data.
+     * it should have a default constructor, a copy constructor.
+     * You can use sjtu::map as value_type by typedef.
+     */
+    typedef pair<const Key, T> value_type;
+    /**
+     * see BidirectionalIterator at CppReference for help.
+     *
+     * if there is anything wrong throw invalid_iterator.
+     *     like it = map.begin(); --it;
+     *       or it = map.end(); ++end();
+     */
+    class const_iterator;
+    class iterator {
+      private:
+        /**
+         * TODO add data members
+         *   just add whatever you want.
+         */
+      public:
+        iterator() {
+            // TODO
+        }
+        iterator(const iterator &other) {
+            // TODO
+        }
+        /**
+         * TODO iter++
+         */
+        iterator operator++(int) {}
+        /**
+         * TODO ++iter
+         */
+        iterator &operator++() {}
+        /**
+         * TODO iter--
+         */
+        iterator operator--(int) {}
+        /**
+         * TODO --iter
+         */
+        iterator &operator--() {}
+        /**
+         * a operator to check whether two iterators are same (pointing to the same memory).
+         */
+        value_type &operator*() const {}
+        bool operator==(const iterator &rhs) const {}
+        bool operator==(const const_iterator &rhs) const {}
+        /**
+         * some other operator for iterator.
+         */
+        bool operator!=(const iterator &rhs) const {}
+        bool operator!=(const const_iterator &rhs) const {}
+
+        /**
+         * for the support of it->first.
+         * See <http://kelvinh.github.io/blog/2013/11/20/overloading-of-member-access-operator-dash-greater-than-symbol-in-cpp/> for help.
+         */
+        value_type *operator->() const noexcept {}
+    };
+    class const_iterator {
+        // it should has similar member method as iterator.
+        //  and it should be able to construct from an iterator.
+      private:
+        // data members.
+      public:
+        const_iterator() {
+            // TODO
+        }
+        const_iterator(const const_iterator &other) {
+            // TODO
+        }
+        const_iterator(const iterator &other) {
+            // TODO
+        }
+        // And other methods in iterator.
+        // And other methods in iterator.
+        // And other methods in iterator.
+    };
+    /**
+     * TODO two constructors
+     */
+    map() {}
+    map(const map &other) {}
+    /**
+     * TODO assignment operator
+     */
+    map &operator=(const map &other) {}
+    /**
+     * TODO Destructors
+     */
+    ~map() {}
+    /**
+     * TODO
+     * access specified element with bounds checking
+     * Returns a reference to the mapped value of the element with key equivalent to key.
+     * If no such element exists, an exception of type `index_out_of_bound'
+     */
+    T &at(const Key &key) {}
+    const T &at(const Key &key) const {}
+    /**
+     * TODO
+     * access specified element
+     * Returns a reference to the value that is mapped to a key equivalent to key,
+     *   performing an insertion if such key does not already exist.
+     */
+    T &operator[](const Key &key) {}
+    /**
+     * behave like at() throw index_out_of_bound if such key does not exist.
+     */
+    const T &operator[](const Key &key) const {}
+    /**
+     * return a iterator to the beginning
+     */
+    iterator begin() {}
+    const_iterator cbegin() const {}
+    /**
+     * return a iterator to the end
+     * in fact, it returns past-the-end.
+     */
+    iterator end() {}
+    const_iterator cend() const {}
+    /**
+     * checks whether the container is empty
+     * return true if empty, otherwise false.
+     */
+    bool empty() const {}
+    /**
+     * returns the number of elements.
+     */
+    size_t size() const {}
+    /**
+     * clears the contents
+     */
+    void clear() {}
+    /**
+     * insert an element.
+     * return a pair, the first of the pair is
+     *   the iterator to the new element (or the element that prevented the insertion),
+     *   the second one is true if insert successfully, or false.
+     */
+    pair<iterator, bool> insert(const value_type &value) {}
+    /**
+     * erase the element at pos.
+     *
+     * throw if pos pointed to a bad element (pos == this->end() || pos points an element out of this)
+     */
+    void erase(iterator pos) {}
+    /**
+     * Returns the number of elements with key
+     *   that compares equivalent to the specified argument,
+     *   which is either 1 or 0
+     *     since this container does not allow duplicates.
+     * The default method of check the equivalence is !(a < b || b > a)
+     */
+    size_t count(const Key &key) const {}
+    /**
+     * Finds an element with key equivalent to key.
+     * key value of the element to search for.
+     * Iterator to an element with key equivalent to key.
+     *   If no such element is found, past-the-end (see end()) iterator is returned.
+     */
+    iterator find(const Key &key) {}
+    const_iterator find(const Key &key) const {}
+};
+
+}
+
+#endif

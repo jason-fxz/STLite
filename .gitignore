@@ -1,2 +1,5 @@
 *.out
 */testdir/*
+build/*
+.cache/
+.vscode/
