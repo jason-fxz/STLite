@@ -676,6 +676,10 @@ template <
         return iterator(RBTree<Key, T, Compare>::m_root ?
                         RBTree<Key, T, Compare>::m_root->minimum() : nullptr, this);
     }
+    const_iterator begin() const {
+        return const_iterator(RBTree<Key, T, Compare>::m_root ?
+                              RBTree<Key, T, Compare>::m_root->minimum() : nullptr, this);
+    }
     const_iterator cbegin() const {
         return const_iterator(RBTree<Key, T, Compare>::m_root ?
                               RBTree<Key, T, Compare>::m_root->minimum() : nullptr, this);
@@ -686,6 +690,9 @@ template <
      */
     iterator end() {
         return iterator(nullptr, this);
+    }
+    const_iterator end() const {
+        return const_iterator(nullptr, this);
     }
     const_iterator cend() const {
         return const_iterator(nullptr, this);

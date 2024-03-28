@@ -60,7 +60,7 @@ void print(const _Tp &__val, size_t __indent = 0) {
 
 int main() {
     std::vector<int> a[5];
-    std::map<int, int> mp;
+    sjtu::map<int, int> mp;
     mp[1] = 2, mp[3] = 4;
     sjtu::print(mp);
     std::vector<std::vector<int>> b[5];
