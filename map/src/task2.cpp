@@ -20,7 +20,9 @@ static constexpr bool is_container_v = requires(const _Tp &x) {
 template <typename _Tp>
 static constexpr bool is_containers_container_v = requires(const _Tp &x) {
     std::begin(*std::begin(x));
-    std::end(x);
+    std::end(*std::begin(x));
+    std::begin(*std::end(x));
+    std::end(*std::end(x));
 };
 
 template <typename _Tp>
@@ -30,7 +32,6 @@ static constexpr bool is_pair_v = requires(const _Tp &x) {
 };
 
 
-
 template <typename _Tp>
 void print(const _Tp &__val, size_t __indent = 0) {
     if constexpr(is_containers_container_v<_Tp>) {
@@ -38,7 +39,6 @@ void print(const _Tp &__val, size_t __indent = 0) {
         for (const auto &elem : __val) {
             print(elem, __indent + 2);
         }
-        // std::cout << "]\n";
         std::cout << std::setw(__indent) << "" << "}\n";
     } else if constexpr(is_container_v<_Tp>) {
         std::cout << std::setw(__indent) << "" << '{';
