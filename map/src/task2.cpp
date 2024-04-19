@@ -21,8 +21,6 @@ template <typename _Tp>
 static constexpr bool is_containers_container_v = requires(const _Tp &x) {
     std::begin(*std::begin(x));
     std::end(*std::begin(x));
-    std::begin(*std::end(x));
-    std::end(*std::end(x));
 };
 
 template <typename _Tp>
@@ -71,7 +69,6 @@ int main() {
         a[i].push_back(i), a[i].push_back(i); 
     sjtu::print(a);
     sjtu::print(b);
-
     return 0;
 }
 
